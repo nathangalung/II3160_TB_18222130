@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                   String                    @id @default(uuid())
+  name                 String
+  email                String                    @unique
+  password             String
+  role                 UserRole
+  imageUrl             String?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  doctorAppointments   Appointment[]             @relation("DoctorAppointments")
+  patientAppointments  Appointment[]             @relation("PatientAppointments")
+  conversations        ConversationParticipant[]
+  messages             Message[]
+  notifications        Notification[]
+  writtenPrescriptions Prescription[]            @relation("DoctorPrescriptions")
+  prescriptions        Prescription[]            @relation("PatientPrescriptions")
+}
+
+model Appointment {
+  id             String            @id @default(uuid())
+  date           DateTime
+  complaint      String
+  medicalHistory String
+  status         AppointmentStatus @default(PENDING)
+  payment        Float?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  patientId      String
+  doctorId       String
+  doctor         User              @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  patient        User              @relation("PatientAppointments", fields: [patientId], references: [id])
+  prescription   Prescription?
+
+  @@index([patientId])
+  @@index([doctorId])
+}
+
+model Prescription {
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  status        String      @default("PENDING")
+  appointmentId String      @unique
+  patientId     String
+  doctorId      String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  doctor        User        @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
+  patient       User        @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  medicines     Medicine[]  @relation("MedicineToPrescription")
+
+  @@index([patientId])
+  @@index([doctorId])
+}
+
+model Medicine {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  imageUrl      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  prescriptions Prescription[] @relation("MedicineToPrescription")
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  lastMessage  String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  createdAt      DateTime     @default(now())
+  conversationId String
+  senderId       String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+enum UserRole {
+  PATIENT
+  DOCTOR
+  PHARMACIST
+}
+
+enum AppointmentStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELLED
+}

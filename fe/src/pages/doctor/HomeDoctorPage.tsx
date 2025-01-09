@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 
@@ -27,6 +28,8 @@ const todayColumns = [
 ]
 
 export default function HomeDoctorPage() {
+  const navigate = useNavigate()
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header variant="dashboard" userName="dr. Kasyfil" />
@@ -71,14 +74,23 @@ export default function HomeDoctorPage() {
                   </thead>
                   <tbody>
                     {todayAppointments.map((appointment, index) => (
-                      <tr key={index} className="border-t border-gray-200">
+                      <tr 
+                        key={index} 
+                        className="border-t border-gray-200 cursor-pointer hover:bg-gray-50"
+                        onClick={() => navigate(`/doctor/appointment`)}
+                      >
                         <td className="px-4 py-4 text-sm">{appointment.id}</td>
                         <td className="px-4 py-4 text-sm">{appointment.patientName}</td>
                         <td className="px-4 py-4 text-sm">{appointment.complaint}</td>
                         <td className="px-4 py-4 text-sm">{appointment.date}</td>
                         <td className="px-4 py-4 text-sm">{appointment.status}</td>
                         <td className="px-4 py-4 text-sm">
-                          <button className="text-[#0EA5E9] hover:underline">
+                          <button 
+                            className="text-[#0EA5E9] hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                            }}
+                          >
                             UPLOAD RESEP
                           </button>
                         </td>

@@ -1,27 +1,34 @@
-import { Bell, MessageCircle, Home, Menu } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import LogoImage from '../assets/Logo.png';
-import Notification from './Notification';
+import { MessageCircle, Home, Menu } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import LogoImage from '../assets/Logo.png'
+import Notification from './Notification'
 
 interface HeaderProps {
-  variant?: 'landing' | 'dashboard';
-  userName?: string;
+  variant?: 'landing' | 'dashboard'
+  userName?: string
 }
 
-export default function Header({ variant = 'landing', userName }: HeaderProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+const NavigationItems = () => {
+  const [userRole, setUserRole] = useState<string>('')
+  
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    setUserRole(user.role || '')
+  }, [])
 
-  const NavigationItems = () => (
+  const baseRoute = `/${userRole?.toLowerCase()}`
+  
+  return (
     <>
       <Link
-        to="/home"
+        to={`${baseRoute}/home`}
         className="flex items-center gap-2 text-white hover:text-[#0EA5E9] transition-colors"
       >
         <Home className="h-5 w-5" />
         <span>Home</span>
       </Link>
+      
       <Link
         to="/chat"
         className="flex items-center gap-2 text-white hover:text-[#0EA5E9] transition-colors"
@@ -29,15 +36,14 @@ export default function Header({ variant = 'landing', userName }: HeaderProps) {
         <MessageCircle className="h-5 w-5" />
         <span>Chat</span>
       </Link>
-      <button
-        onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-        className="flex items-center gap-2 text-white hover:text-[#0EA5E9] transition-colors"
-      >
-        <Bell className="h-5 w-5" />
-        <span>Notifications</span>
-      </button>
+      
+      <Notification />
     </>
-  );
+  )
+}
+
+export default function Header({ variant = 'landing', userName }: HeaderProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-50 bg-[#0A0F2C] px-4 py-4 md:px-6">
@@ -106,17 +112,6 @@ export default function Header({ variant = 'landing', userName }: HeaderProps) {
           </>
         )}
       </div>
-      {isNotificationOpen && (
-        <div className="absolute top-16 right-4">
-          <Notification
-            notifications={[
-              { id: 1, message: 'Your appointment schedule with Dr. Kasyfi is approved', timestamp: '08:45 PM on 12 March, 2024' },
-              { id: 2, message: 'Your appointment schedule with Dr. Kasyfi is approved', timestamp: '08:45 PM on 12 March, 2024' },
-              { id: 3, message: 'Your appointment schedule with Dr. Kasyfi is approved', timestamp: '08:45 PM on 12 March, 2024' },
-            ]}
-          />
-        </div>
-      )}
     </header>
-  );
+  )
 }

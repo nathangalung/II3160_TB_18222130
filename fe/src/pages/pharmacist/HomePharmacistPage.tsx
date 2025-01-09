@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 
@@ -30,6 +31,8 @@ const columns = [
 ]
 
 export default function HomePharmacistPage() {
+  const navigate = useNavigate()
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header variant="dashboard" userName="Bryan" />
@@ -52,7 +55,11 @@ export default function HomePharmacistPage() {
               </thead>
               <tbody>
                 {prescriptionData.map((item, index) => (
-                  <tr key={index} className="border-t border-gray-200">
+                  <tr 
+                  key={index} 
+                  className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => navigate(`/pharmacist/prescription`)}
+                >
                     <td className="px-4 py-4 text-sm">{item.id}</td>
                     <td className="px-4 py-4 text-sm">{item.patientName}</td>
                     <td className="px-4 py-4 text-sm">{item.doctorName}</td>
@@ -60,7 +67,13 @@ export default function HomePharmacistPage() {
                     <td className="px-4 py-4 text-sm">{item.prescription}</td>
                     <td className="px-4 py-4 text-sm">{item.status}</td>
                     <td className="px-4 py-4 text-sm">
-                      <button className="text-[#0EA5E9] hover:underline">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/pharmacist/prescription`)
+                        }}
+                        className="text-[#0EA5E9] hover:underline"
+                      >
                         AKSI
                       </button>
                     </td>

@@ -17,26 +17,13 @@ export default function LoginPage() {
     setError('')
   
     try {
-      const response = await fetch('http://localhost:3001/api/users/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password
-        })
+      const { data, error } = await api.auth.login({
+        email: email.trim(),
+        password
       })
   
-      const data = await response.json()
-  
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed')
-      }
-  
-      // Make sure data has the required properties
-      if (!data.token || !data.user) {
-        throw new Error('Invalid response from server')
+      if (error) {
+        throw new Error(error)
       }
   
       localStorage.setItem('token', data.token)

@@ -1,12 +1,46 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { supabase } from '../libs/supabase'
 import { generateToken, hashPassword, comparePasswords } from '../utils/auth'
 import { authMiddleware } from '../middlewares/auth'
-import { Prisma, PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
+
+interface Message {
+  id: string;
+  content: string;
+  createdAt: Date;
+  conversationId: string;
+  senderId: string;
+}
+
+interface Participant {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    imageUrl?: string;
+  };
+}
+
+interface Conversation {
+  id: string;
+  messages: Message[];
+  participants: Participant[];
+  lastMessage?: string;
+  updatedAt?: Date;
+  createdAt: Date;
+}
+
+interface ApiError extends Error {
+  message: string;
+}
+
+type UserRole = 'DOCTOR' | 'PATIENT' | 'PHARMACIST';
 
 const userRoutes = new Hono()
 
@@ -32,29 +66,13 @@ userRoutes.post('/register', zValidator('json', registerSchema), async (c) => {
   try {
     const data = await c.req.json()
     
-    // Validate password
-    if (data.password.length < 6) {
-      return c.json({ 
-        error: 'Password must be at least 6 characters long' 
-      }, 400)
-    }
-
     // Check if email already exists
-    const existingEmail = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email: data.email }
     })
 
-    if (existingEmail) {
+    if (existingUser) {
       return c.json({ error: 'Email already registered' }, 400)
-    }
-
-    // Check if name already exists
-    const existingName = await prisma.user.findFirst({
-      where: { name: data.name }
-    })
-
-    if (existingName) {
-      return c.json({ error: 'Name already taken' }, 400)
     }
 
     // Hash password
@@ -66,7 +84,7 @@ userRoutes.post('/register', zValidator('json', registerSchema), async (c) => {
         name: data.name,
         email: data.email,
         password: hashedPassword,
-        role: data.role,
+        role: data.role as UserRole,
         imageUrl: null
       }
     })
@@ -75,8 +93,8 @@ userRoutes.post('/register', zValidator('json', registerSchema), async (c) => {
       message: 'Registration successful! Please login to continue.'
     }, 201)
 
-  } catch (error) {
-    console.error('Registration error:', error)
+  } catch (err) {
+    const error = err as ApiError
     return c.json({ 
       error: 'Registration failed',
       details: error.message 
@@ -88,22 +106,17 @@ userRoutes.post('/login', zValidator('json', loginSchema), async (c) => {
   try {
     const { email, password } = await c.req.json()
 
-    // Check email first
     const user = await prisma.user.findUnique({
       where: { email: email.trim() }
-    }).catch(error => {
-      console.error('Database connection error:', error)
-      throw new Error('Database connection failed')
     })
 
     if (!user) {
       return c.json({ error: 'Email not registered' }, 401)
     }
 
-    // Then check password
     const validPassword = await comparePasswords(password, user.password)
     if (!validPassword) {
-      return c.json({ error: 'Incorrect password' }, 401) 
+      return c.json({ error: 'Incorrect password' }, 401)
     }
 
     const token = generateToken(user.id)
@@ -113,64 +126,28 @@ userRoutes.post('/login', zValidator('json', loginSchema), async (c) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        imageUrl: user.imageUrl
       },
       token
     })
 
-  } catch (error) {
-    console.error('Login error:', error)
+  } catch (err) {
+    const error = err as ApiError
     return c.json({ 
       error: error.message || 'Failed to authenticate'
     }, 500)
   }
 })
 
-userRoutes.get('/profile', authMiddleware, async (c) => {
-  try {
-    const user = c.get('user')
-    const userData = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        imageUrl: true,
-        doctorAppointments: user.role === 'DOCTOR',
-        patientAppointments: user.role === 'PATIENT',
-        prescriptions: user.role === 'PATIENT',
-        writtenPrescriptions: user.role === 'DOCTOR'
-      }
-    })
-
-    return c.json({ user: userData })
-  } catch (error) {
-    return c.json({ error: 'Failed to fetch profile' }, 500)
-  }
-})
-
-userRoutes.get('/notifications', authMiddleware, async (c) => {
-  try {
-    const user = c.get('user')
-    const notifications = await prisma.notification.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' }
-    })
-    return c.json(notifications)
-  } catch (error) {
-    return c.json({ error: 'Failed to fetch notifications' }, 500)
-  }
-})
-
 userRoutes.get('/chat', authMiddleware, async (c) => {
   try {
     const user = c.get('user')
-    let conversations = []
+    let conversations: Conversation[] = []
 
     switch (user.role) {
       case 'PATIENT':
-        conversations = await prisma.conversation.findMany({
+        const patientConversations = await prisma.conversation.findMany({
           where: {
             participants: {
               some: {
@@ -189,10 +166,27 @@ userRoutes.get('/chat', authMiddleware, async (c) => {
             }
           }
         })
-        break
+
+        conversations = patientConversations.map(conv => ({
+          id: conv.id,
+          messages: conv.messages,
+          participants: conv.participants.map(p => ({
+            user: {
+              id: p.user.id,
+              name: p.user.name,
+              email: p.user.email,
+              role: p.user.role,
+              imageUrl: p.user.imageUrl || undefined
+            }
+          })),
+          lastMessage: conv.lastMessage || undefined,
+          updatedAt: conv.updatedAt,
+          createdAt: conv.createdAt
+        }));
+        break;
 
       case 'DOCTOR':
-        conversations = await prisma.conversation.findMany({
+        const doctorConversations = await prisma.conversation.findMany({
           where: {
             participants: {
               some: {
@@ -211,10 +205,27 @@ userRoutes.get('/chat', authMiddleware, async (c) => {
             }
           }
         })
-        break
+
+        conversations = doctorConversations.map(conv => ({
+          id: conv.id,
+          messages: conv.messages,
+          participants: conv.participants.map(p => ({
+            user: {
+              id: p.user.id,
+              name: p.user.name,
+              email: p.user.email,
+              role: p.user.role,
+              imageUrl: p.user.imageUrl || undefined
+            }
+          })),
+          lastMessage: conv.lastMessage || undefined,
+          updatedAt: conv.updatedAt,
+          createdAt: conv.createdAt
+        }));
+        break;
 
       case 'PHARMACIST':
-        conversations = await prisma.conversation.findMany({
+        const pharmacistConversations = await prisma.conversation.findMany({
           where: {
             participants: {
               some: {
@@ -232,7 +243,24 @@ userRoutes.get('/chat', authMiddleware, async (c) => {
             }
           }
         })
-        break
+
+        conversations = pharmacistConversations.map(conv => ({
+          id: conv.id,
+          messages: conv.messages,
+          participants: conv.participants.map(p => ({
+            user: {
+              id: p.user.id,
+              name: p.user.name,
+              email: p.user.email,
+              role: p.user.role,
+              imageUrl: p.user.imageUrl || undefined
+            }
+          })),
+          lastMessage: conv.lastMessage || undefined,
+          updatedAt: conv.updatedAt,
+          createdAt: conv.createdAt
+        }));
+        break;
     }
 
     return c.json({ conversations })
@@ -246,20 +274,6 @@ userRoutes.patch('/profile', authMiddleware, zValidator('json', updateProfileSch
     const user = c.get('user')
     const data = await c.req.json()
     
-    // Check email uniqueness if changing email
-    if (data.email) {
-      const { data: existingUser } = await supabase
-        .from('user')
-        .select('id')
-        .eq('email', data.email)
-        .neq('id', user.id)
-        .single()
-
-      if (existingUser) {
-        return c.json({ error: 'Email already exists' }, 400)
-      }
-    }
-
     // Hash password if provided
     const updates: any = { ...data }
     if (data.password) {
@@ -267,14 +281,17 @@ userRoutes.patch('/profile', authMiddleware, zValidator('json', updateProfileSch
     }
 
     // Update user
-    const { data: updatedUser, error } = await supabase
-      .from('user')
-      .update(updates)
-      .eq('id', user.id)
-      .select('id, name, email, role')
-      .single()
-
-    if (error) throw error
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: updates,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        imageUrl: true
+      }
+    })
 
     return c.json({ user: updatedUser })
   } catch (error) {

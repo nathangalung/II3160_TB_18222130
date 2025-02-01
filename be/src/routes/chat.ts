@@ -1,8 +1,33 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { supabase } from '../libs/supabase'
 import { authMiddleware } from '../middlewares/auth'
+
+interface Conversation {
+  id: string;
+  messages: Message[];
+  participants: Participant[];
+}
+
+interface Message {
+  id: string;
+  content: string;
+  createdAt: Date;
+  conversationId: string;
+  senderId: string;
+}
+
+interface Participant {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    imageUrl?: string;
+  };
+}
 
 const chatRoutes = new Hono()
 chatRoutes.use('/*', authMiddleware)
@@ -13,7 +38,7 @@ const sendMessageSchema = z.object({
 })
 
 // Get chat list
-chatRoutes.get('/conversations', async (c) => {
+chatRoutes.get('/conversations', async (c: Context) => {
   try {
     const user = c.get('user')
     

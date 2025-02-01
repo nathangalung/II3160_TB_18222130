@@ -11,11 +11,14 @@ import { notificationRoutes } from './src/routes/notification'
 const app = new Hono()
 export const prisma = new PrismaClient()
 
-const PORT = 3001
+const PORT = parseInt(process.env.PORT || '3000')
 
-// Enable CORS with specific options
+// Enable CORS with production URLs
 app.use('/*', cors({
-  origin: ['http://localhost:5173'], // Frontend dev server port
+  origin: [
+    'http://localhost:5173', // Development
+    'https://medico-tst.vercel.app' // Production frontend
+  ],
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
@@ -28,14 +31,23 @@ app.route('/api/users', userRoutes)
 app.route('/api/appointments', appointmentRoutes)
 app.route('/api/prescriptions', prescriptionRoutes)
 app.route('/api/chat', chatRoutes)
-app.route('/api/notifications', notificationRoutes) // Add notifications route
+app.route('/api/notifications', notificationRoutes)
 
-// Start server
-serve({
-  fetch: app.fetch,
-  port: PORT
-}, () => {
-  console.log(`Server is running on http://localhost:${PORT}`)
-})
+// Development server
+if (process.env.NODE_ENV !== 'production') {
+  const startServer = async () => {
+    try {
+      const server = serve({
+        fetch: app.fetch,
+        port: PORT
+      })
+      console.log(`Server is running on http://localhost:${PORT}`)
+    } catch (error) {
+      console.error('Failed to start server:', error)
+      process.exit(1)
+    }
+  }
+  startServer()
+}
 
 export default app

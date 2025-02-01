@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { supabase } from '../libs/supabase'
@@ -6,15 +7,15 @@ import { authMiddleware } from '../middlewares/auth'
 import { createNotification } from '../utils/notification'
 
 interface Appointment {
-  id: string
-  date: string
-  complaint: string
-  medicalHistory: string
-  patientId: string
-  doctorId: string
-  status: 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELLED'
-  createdAt: string
-  updatedAt: string
+  id: string;
+  date: string;
+  complaint: string;
+  medicalHistory: string;
+  patientId: string;
+  doctorId: string;
+  status: 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface User {
@@ -39,10 +40,10 @@ const updateAppointmentSchema = z.object({
 })
 
 // Create appointment
-appointmentRoutes.post('/', zValidator('json', createAppointmentSchema), async (c) => {
+appointmentRoutes.post('/', zValidator('json', createAppointmentSchema), async (c: Context) => {
   try {
+    const user = c.get('user')
     const data = await c.req.json()
-    const user = c.get('user') as User
     
     if (user.role !== 'PATIENT') {
       return c.json({ error: 'Only patients can create appointments' }, 403)
@@ -88,10 +89,7 @@ appointmentRoutes.post('/', zValidator('json', createAppointmentSchema), async (
     return c.json({ appointment }, 201)
   } catch (error: any) {
     console.error('Appointment creation failed:', error)
-    return c.json({ 
-      error: 'Failed to create appointment',
-      details: error.message 
-    }, 500)
+    return c.json({ error: 'Failed to create appointment' }, 500)
   }
 })
 

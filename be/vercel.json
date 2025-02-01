@@ -4,14 +4,14 @@
   "installCommand": "curl -fsSL https://bun.sh/install | bash && bun install",
   "builds": [
     {
-      "src": "index.ts",
+      "src": "dist/index.js",
       "use": "@vercel/node"
     }
   ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/index.ts"
+      "destination": "/dist/index.js"
     }
   ],
   "headers": [
@@ -19,8 +19,8 @@
       "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "https://medico-tst.vercel.app" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,DELETE,PATCH,POST,PUT" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://medico-tst-fe.vercel.app" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,DELETE,PATCH,POST,PUT,OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
       ]
     }

@@ -1,4 +1,4 @@
-const API_URL = process.env.NODE_ENV === 'production'
+const API_URL = process.env.NODE_ENV === 'production' 
   ? 'https://medico-tst-be.vercel.app/api'
   : 'http://localhost:3000/api'
 
@@ -24,7 +24,6 @@ interface ApiResponse<T = any> {
   message?: string
 }
 
-// Helper function for API requests
 async function makeRequest<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
   try {
     const token = localStorage.getItem('token')

@@ -13,11 +13,10 @@ export const prisma = new PrismaClient()
 
 const PORT = parseInt(process.env.PORT || '3000')
 
-// Enable CORS with production URLs
 app.use('/*', cors({
   origin: [
-    'http://localhost:5173', // Development
-    'https://medico-tst.vercel.app' // Production frontend
+    'http://localhost:5173',
+    'https://medico-tst.vercel.app'
   ],
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH', 'OPTIONS'],

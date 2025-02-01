@@ -1,4 +1,4 @@
-const API_URL = process.env.NODE_ENV === 'production' 
+const API_URL = process.env.NODE_ENV === 'production'
   ? 'https://medico-tst-be.vercel.app/api'
   : 'http://localhost:3000/api'
 

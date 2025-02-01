@@ -1,7 +1,22 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { api } from '../utils/api'
 import AuthImage from '../assets/Auth.png'
+
+interface LoginResponse {
+  data?: {
+    token: string
+    user: {
+      id: string
+      name: string
+      email: string
+      role: 'PATIENT' | 'DOCTOR' | 'PHARMACIST'
+      imageUrl?: string
+    }
+  }
+  error?: string
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -17,20 +32,22 @@ export default function LoginPage() {
     setError('')
   
     try {
-      const { data, error } = await api.auth.login({
+      const response = await api.auth.login({
         email: email.trim(),
         password
-      })
-  
-      if (error) {
-        throw new Error(error)
+      }) as LoginResponse
+
+      if (response.error || !response.data) {
+        throw new Error(response.error || 'Login failed')
       }
-  
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
-  
+
+      const { token, user } = response.data
+
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+
       // Navigate based on user role
-      switch (data.user.role) {
+      switch (user.role) {
         case 'PATIENT':
           navigate('/patient/home')
           break

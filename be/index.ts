@@ -16,7 +16,7 @@ const PORT = parseInt(process.env.PORT || '3000')
 app.use('/*', cors({
   origin: [
     'http://localhost:5173',
-    'https://medico-tst.vercel.app'
+    'https://medico-tst-fe.vercel.app'
   ],
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH', 'OPTIONS'],

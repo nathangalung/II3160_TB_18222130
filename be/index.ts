@@ -32,6 +32,13 @@ app.route('/api/prescriptions', prescriptionRoutes)
 app.route('/api/chat', chatRoutes)
 app.route('/api/notifications', notificationRoutes)
 
+app.options('/*', (c) => {
+  c.header('Access-Control-Allow-Origin', 'https://medico-tst-fe.vercel.app')
+  c.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+  c.header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+  return c.text('OK')
+})
+
 // Development server
 if (process.env.NODE_ENV !== 'production') {
   const startServer = async () => {

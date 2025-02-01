@@ -82,12 +82,17 @@ export default function ProfilePage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col">
       <Header variant="dashboard" userName={profileData.name} />
-      
       <main className="flex-1 bg-white px-4 py-8 md:px-6 lg:px-8 overflow-y-auto">
         <div className="mx-auto max-w-4xl">
           <h1 className="mb-8 text-2xl font-bold text-[#0A0F2C] md:text-3xl">
             Profile
           </h1>
+
+          {error && (
+            <div className="mb-6 p-4 rounded-lg bg-red-50 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
 
           <div className="rounded-lg border border-gray-200 p-6 md:p-8">
             <div className="grid gap-8 md:grid-cols-[240px,1fr]">
@@ -102,9 +107,10 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <button
                     onClick={isEditing ? handleSave : handleEdit}
-                    className="w-full rounded-lg bg-[#003B73] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#003B73]/90"
+                    disabled={loading}
+                    className="w-full rounded-lg bg-[#003B73] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#003B73]/90 disabled:opacity-50"
                   >
-                    {isEditing ? 'Save Profile' : 'Edit Profile'}
+                    {loading ? 'Saving...' : (isEditing ? 'Save Profile' : 'Edit Profile')}
                   </button>
                   <button
                     onClick={handleLogout}

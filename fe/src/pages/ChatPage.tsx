@@ -29,7 +29,33 @@ interface Conversation {
   unreadCount?: number
 }
 
-const ContactList = ({ conversations, selectedConversation, onSelectConversation, currentUserId }) => (
+interface ContactListProps {
+  conversations: Conversation[]
+  selectedConversation: Conversation | null
+  onSelectConversation: (conversation: Conversation) => void
+  currentUserId: string
+}
+
+// interface ChatHeaderProps {
+//   conversation: Conversation
+//   currentUserId: string
+// }
+
+// interface MessageListProps {
+//   messages: Message[]
+//   currentUserId: string
+// }
+
+// interface MessageInputProps {
+//   onSendMessage: (content: string) => void
+// }
+
+type ApiResponse<T> = {
+  data?: T
+  error?: string
+}
+
+const ContactList = ({ conversations, selectedConversation, onSelectConversation, currentUserId }: ContactListProps) => (
   <div className="w-80 border-r border-gray-200">
     <div className="p-4 border-b border-gray-200">
       <div className="relative">
@@ -63,7 +89,7 @@ const ContactList = ({ conversations, selectedConversation, onSelectConversation
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <p className="font-medium truncate">{otherParticipant?.name}</p>
-                  {conversation.unreadCount > 0 && (
+                  {conversation.unreadCount && conversation.unreadCount > 0 && (
                     <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-xs text-white">
                       {conversation.unreadCount}
                     </span>
@@ -80,82 +106,83 @@ const ContactList = ({ conversations, selectedConversation, onSelectConversation
   </div>
 )
 
-const ChatHeader = ({ conversation, currentUserId }) => {
-  const otherParticipant = conversation.participants.find(
-    p => p.user.id !== currentUserId
-  )?.user
-  return (
-    <div className="border-b border-gray-200 p-4">
-      <div className="flex items-center gap-3">
-        <img
-          src={otherParticipant?.imageUrl || DefaultAvatar}
-          alt={otherParticipant?.name}
-          className="h-10 w-10 rounded-full"
-        />
-        <div>
-          <h2 className="font-medium">{otherParticipant?.name}</h2>
-          <p className="text-sm text-gray-500">{otherParticipant?.role}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
+// const ChatHeader = ({ conversation, currentUserId }: ChatHeaderProps) => {
+//   const otherParticipant = conversation.participants.find(
+//     p => p.user.id !== currentUserId
+//   )?.user
+  
+//   return (
+//     <div className="border-b border-gray-200 p-4">
+//       <div className="flex items-center gap-3">
+//         <img
+//           src={otherParticipant?.imageUrl || DefaultAvatar}
+//           alt={otherParticipant?.name}
+//           className="h-10 w-10 rounded-full"
+//         />
+//         <div>
+//           <h2 className="font-medium">{otherParticipant?.name}</h2>
+//           <p className="text-sm text-gray-500">{otherParticipant?.role}</p>
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
 
-const MessageList = ({ messages, currentUserId }) => (
-  <div className="flex-1 overflow-y-auto p-4">
-    <div className="space-y-4">
-      {messages.map(message => (
-        <div
-          key={message.id}
-          className={`flex ${
-            message.senderId === currentUserId ? 'justify-end' : 'justify-start'
-          }`}
-        >
-          <div
-            className={`rounded-lg px-4 py-2 max-w-[70%] ${
-              message.senderId === currentUserId
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100'
-            }`}
-          >
-            <p className="text-sm">{message.content}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)
+// const MessageList = ({ messages, currentUserId }: MessageListProps) => (
+//   <div className="flex-1 overflow-y-auto p-4">
+//     <div className="space-y-4">
+//       {messages.map(message => (
+//         <div
+//           key={message.id}
+//           className={`flex ${
+//             message.senderId === currentUserId ? 'justify-end' : 'justify-start'
+//           }`}
+//         >
+//           <div
+//             className={`rounded-lg px-4 py-2 max-w-[70%] ${
+//               message.senderId === currentUserId
+//                 ? 'bg-blue-500 text-white'
+//                 : 'bg-gray-100'
+//             }`}
+//           >
+//             <p className="text-sm">{message.content}</p>
+//           </div>
+//         </div>
+//       ))}
+//     </div>
+//   </div>
+// )
 
-const MessageInput = ({ onSendMessage }) => {
-  const [message, setMessage] = useState('')
+// const MessageInput = ({ onSendMessage }: MessageInputProps) => {
+//   const [message, setMessage] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!message.trim()) return
-    onSendMessage(message)
-    setMessage('')
-  }
+//   const handleSubmit = (e: React.FormEvent) => {
+//     e.preventDefault()
+//     if (!message.trim()) return
+//     onSendMessage(message)
+//     setMessage('')
+//   }
 
-  return (
-    <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={message}
-          onChange={e => setMessage(e.target.value)}
-          placeholder="Type a message..."
-          className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm focus:outline-none"
-        />
-        <button
-          type="submit"
-          className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-        >
-          <Send className="h-4 w-4" />
-        </button>
-      </div>
-    </form>
-  )
-}
+//   return (
+//     <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
+//       <div className="flex gap-2">
+//         <input
+//           type="text"
+//           value={message}
+//           onChange={e => setMessage(e.target.value)}
+//           placeholder="Type a message..."
+//           className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm focus:outline-none"
+//         />
+//         <button
+//           type="submit"
+//           className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+//         >
+//           <Send className="h-4 w-4" />
+//         </button>
+//       </div>
+//     </form>
+//   )
+// }
 
 const sampleConversations: Conversation[] = [
   {
@@ -234,6 +261,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [inputMessage, setInputMessage] = useState('')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
@@ -245,13 +273,12 @@ export default function ChatPage() {
     const fetchConversations = async () => {
       setLoading(true)
       try {
-        const { data, error } = await api.chat.getConversations()
-        if (error) throw new Error(error)
-        // Use sample data if no conversations exist
-        setConversations(data?.conversations?.length > 0 ? data.conversations : sampleConversations)
+        const response = await api.chat.getConversations() as ApiResponse<{ conversations: Conversation[] }>
+        if (response.error) throw new Error(response.error)
+        
+        setConversations(response.data?.conversations?.length ? response.data.conversations : sampleConversations)
       } catch (err) {
         console.error('Failed to fetch conversations:', err)
-        // Fallback to sample data
         setConversations(sampleConversations)
       } finally {
         setLoading(false)
@@ -266,13 +293,12 @@ export default function ChatPage() {
     
     const fetchMessages = async () => {
       try {
-        const { data, error } = await api.chat.getMessages(currentConversation.id)
-        if (error) throw new Error(error)
-        // Use sample messages if none exist
-        setMessages(data?.messages?.length > 0 ? data.messages : sampleMessages[currentConversation.id] || [])
+        const response = await api.chat.getMessages(currentConversation.id) as ApiResponse<{ messages: Message[] }>
+        if (response.error) throw new Error(response.error)
         
-        // Mark messages as read
-        if (currentConversation.unreadCount > 0) {
+        setMessages(response.data?.messages?.length ? response.data.messages : sampleMessages[currentConversation.id] || [])
+        
+        if (currentConversation?.unreadCount && currentConversation.unreadCount > 0) {
           setConversations(prev =>
             prev.map(conv =>
               conv.id === currentConversation.id
@@ -283,7 +309,6 @@ export default function ChatPage() {
         }
       } catch (err) {
         console.error('Failed to fetch messages:', err)
-        // Fallback to sample messages
         setMessages(sampleMessages[currentConversation.id] || [])
       }
     }
@@ -301,10 +326,20 @@ export default function ChatPage() {
 
       if (!receiver) return
 
-      await api.chat.sendMessage({
+      const response = await api.chat.sendMessage({
         content,
         receiverId: receiver.user.id
       })
+      
+      if (response.error) throw new Error(response.error)
+
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        content,
+        senderId: user.id,
+        createdAt: new Date().toISOString(),
+        isRead: false
+      }])
     } catch (err) {
       console.error('Failed to send message:', err)
       setError('Failed to send message')
@@ -328,38 +363,51 @@ export default function ChatPage() {
         {currentConversation ? (
           <div className="flex flex-1 flex-col">
             <div className="border-b border-gray-200 p-4">
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <div className="flex items-center gap-3">
+                <img
+                  src={currentConversation.participants.find(p => p.user.id !== user.id)?.user.imageUrl || DefaultAvatar}
+                  alt={currentConversation.participants.find(p => p.user.id !== user.id)?.user.name}
+                  className="h-10 w-10 rounded-full"
+                />
+                <div>
+                  <h2 className="font-medium">
+                    {currentConversation.participants.find(p => p.user.id !== user.id)?.user.name}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {currentConversation.participants.find(p => p.user.id !== user.id)?.user.role}
+                  </p>
+                </div>
+              </div>
+              {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map(message => (
                 <div
                   key={message.id}
-                  className={`flex ${message.senderId === user.id ? 'justify-end' : 'justify-start'} mb-4`}
+                  className={`flex ${message.senderId === user.id ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`rounded-lg px-4 py-2 max-w-[70%] ${
-                      message.senderId === user.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100'
+                      message.senderId === user.id ? 'bg-blue-500 text-white' : 'bg-gray-100'
                     }`}
                   >
-                    {message.content}
+                    <p className="text-sm">{message.content}</p>
                   </div>
                 </div>
               ))}
             </div>
+
             <div className="border-t border-gray-200 p-4">
-              <form onSubmit={e => {
+              <form onSubmit={(e) => {
                 e.preventDefault()
-                const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement
-                if (input.value.trim()) {
-                  handleSendMessage(input.value)
-                  input.value = ''
-                }
+                handleSendMessage(inputMessage)
+                setInputMessage('')
               }}>
                 <div className="flex gap-2">
                   <input
-                    name="message"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
                     type="text"
                     placeholder="Type a message..."
                     className="flex-1 rounded-lg border border-gray-300 px-4 py-2"

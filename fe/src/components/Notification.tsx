@@ -11,7 +11,6 @@ interface Notification {
   createdAt: string
 }
 
-// Sample notifications based on user role
 const getSampleNotifications = (userRole: string): Notification[] => {
   switch (userRole?.toUpperCase()) {
     case 'DOCTOR':
@@ -80,32 +79,26 @@ export default function NotificationComponent() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
-    // Initialize with sample notifications
     const sampleNotifs = getSampleNotifications(user.role)
     setNotifications(sampleNotifs)
 
     const fetchNotifications = async () => {
       if (!user?.id || !localStorage.getItem('token')) {
-        return // Keep sample notifications if no auth
+        return 
       }
       
       setLoading(true)
       try {
-        const { data, error } = await api.notifications.getAll()
-        if (error) throw new Error(error)
+        const { data } = await api.notifications.getAll()
         
-        // Only update if we got real notifications, otherwise keep samples
-        if (data?.length > 0) {
+        if (data && data.length > 0) {
           setNotifications(data)
         }
-        setError('')
       } catch (err) {
         console.error('Notification error:', err)
-        // Keep sample notifications on error
       } finally {
         setLoading(false)
       }

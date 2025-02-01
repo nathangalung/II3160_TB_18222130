@@ -18,19 +18,16 @@ const doctors: Doctor[] = Array(6).fill({
 })
 
 export default function AppointmentPatientPage() {
-  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     date: '',
     complaint: '',
     medicalHistory: '',
     selectedDoctor: ''
   })
-  const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitting(true)
   
     try {
       const token = localStorage.getItem('token')
@@ -50,8 +47,6 @@ export default function AppointmentPatientPage() {
       navigate('/patient/schedule')
     } catch (error) {
       console.error('Error:', error)
-    } finally {
-      setSubmitting(false)
     }
   }
 

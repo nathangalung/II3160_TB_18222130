@@ -27,8 +27,7 @@ export default function AppointmentDoctorPage() {
   const handleAccept = async () => {
     try {
       setIsSubmitting(true)
-      // Add your accept logic here
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
       console.log('Appointment accepted')
     } finally {
       setIsSubmitting(false)

@@ -2,12 +2,17 @@
   "name": "backend",
   "module": "index.ts",
   "type": "module",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
-    "db:generate": "bunx prisma generate",
-    "db:push": "bunx prisma db push",
-    "db:studio": "bunx prisma studio"
+    "build": "tsc",
+    "vercel-build": "prisma generate && tsc",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -16,6 +21,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@hono/node-server": "^1.13.8",
     "@hono/zod-validator": "^0.1.11",
     "@prisma/client": "^5.7.1",
     "@supabase/supabase-js": "^2.47.10",

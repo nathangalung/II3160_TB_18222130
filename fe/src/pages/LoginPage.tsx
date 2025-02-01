@@ -15,31 +15,30 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    if (!email || !password) {
-      setError('Please fill in all fields')
-      setLoading(false)
-      return
-    }
-
+  
     try {
-      const response = await fetch('http://localhost:3000/api/users/login', {
+      const response = await fetch('http://localhost:3001/api/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: email.trim(),
           password
-        }),
+        })
       })
-
+  
       const data = await response.json()
-
+  
       if (!response.ok) {
-        throw new Error(data.error)
+        throw new Error(data.error || 'Login failed')
       }
-
+  
+      // Make sure data has the required properties
+      if (!data.token || !data.user) {
+        throw new Error('Invalid response from server')
+      }
+  
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
   
@@ -58,7 +57,8 @@ export default function LoginPage() {
           navigate('/patient/home')
       }
     } catch (err: any) {
-      setError(err.message)
+      console.error('Login error:', err)
+      setError(err.message || 'Failed to login')
     } finally {
       setLoading(false)
     }

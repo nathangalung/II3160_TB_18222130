@@ -129,7 +129,7 @@ export default function ProfilePage() {
                 <div className="space-y-4">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      Nama
+                      Name
                     </label>
                     <input
                       type="text"

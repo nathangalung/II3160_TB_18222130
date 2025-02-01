@@ -44,6 +44,26 @@ const NavigationItems = () => {
 
 export default function Header({ variant = 'landing', userName }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [currentUserName, setCurrentUserName] = useState(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    return user.name || userName || ''
+  })
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      setCurrentUserName(user.name || userName || '')
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('userUpdated', handleStorageChange)
+    handleStorageChange()
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('userUpdated', handleStorageChange)
+    }
+  }, [userName])
 
   return (
     <header className="sticky top-0 z-50 bg-[#0A0F2C] px-4 py-4 md:px-6">
@@ -80,9 +100,9 @@ export default function Header({ variant = 'landing', userName }: HeaderProps) {
                 className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-white hover:bg-white/20 transition-colors"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0EA5E9] text-white">
-                  {userName?.charAt(0)}
+                  {currentUserName?.charAt(0)}
                 </div>
-                <span>{userName}</span>
+                <span>{currentUserName}</span>
               </Link>
             </nav>
 
@@ -102,9 +122,9 @@ export default function Header({ variant = 'landing', userName }: HeaderProps) {
                     className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-white hover:bg-white/20 transition-colors"
                   >
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0EA5E9] text-white">
-                      {userName?.charAt(0)}
+                      {currentUserName?.charAt(0)}
                     </div>
-                    <span>{userName}</span>
+                    <span>{currentUserName}</span>
                   </Link>
                 </nav>
               )}

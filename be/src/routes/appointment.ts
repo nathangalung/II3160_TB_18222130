@@ -5,14 +5,33 @@ import { supabase } from '../libs/supabase'
 import { authMiddleware } from '../middlewares/auth'
 import { createNotification } from '../utils/notification'
 
+interface Appointment {
+  id: string
+  date: string
+  complaint: string
+  medicalHistory: string
+  patientId: string
+  doctorId: string
+  status: 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELLED'
+  createdAt: string
+  updatedAt: string
+}
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: 'DOCTOR' | 'PATIENT' | 'PHARMACIST'
+}
+
 const appointmentRoutes = new Hono()
 appointmentRoutes.use('/*', authMiddleware)
 
 const createAppointmentSchema = z.object({
-  date: z.string(),
-  complaint: z.string(),
+  date: z.string().datetime(),
+  complaint: z.string().min(1),
   medicalHistory: z.string(),
-  doctorId: z.string()
+  doctorId: z.string().uuid()
 })
 
 const updateAppointmentSchema = z.object({
@@ -23,14 +42,12 @@ const updateAppointmentSchema = z.object({
 appointmentRoutes.post('/', zValidator('json', createAppointmentSchema), async (c) => {
   try {
     const data = await c.req.json()
-    const user = c.get('user')
+    const user = c.get('user') as User
     
-    // Verify user is a patient
     if (user.role !== 'PATIENT') {
       return c.json({ error: 'Only patients can create appointments' }, 403)
     }
 
-    // Get doctor info for notification
     const { data: doctor, error: doctorError } = await supabase
       .from('users')
       .select('name')
@@ -38,16 +55,15 @@ appointmentRoutes.post('/', zValidator('json', createAppointmentSchema), async (
       .eq('role', 'DOCTOR')
       .single()
 
-    if (doctorError) {
+    if (doctorError || !doctor) {
       console.error('Doctor fetch error:', doctorError)
       return c.json({ error: 'Doctor not found' }, 404)
     }
 
-    // Create appointment
     const { data: appointment, error: appointmentError } = await supabase
       .from('appointments')
       .insert([{
-        date: new Date(data.date),
+        date: new Date(data.date).toISOString(),
         complaint: data.complaint,
         medicalHistory: data.medicalHistory,
         patientId: user.id,
@@ -57,47 +73,47 @@ appointmentRoutes.post('/', zValidator('json', createAppointmentSchema), async (
       .select()
       .single()
 
-      if (appointmentError) {
-        console.error('Appointment creation error:', appointmentError)
-        throw appointmentError
-      }
-  
-      // Send notification
-      await createNotification(
-        data.doctorId,
-        'APPOINTMENT',
-        'New Appointment Request',
-        `You have a new appointment request from ${user.name}`
-      )
-  
-      return c.json({ appointment }, 201)
-    } catch (error) {
-      console.error('Appointment creation failed:', error)
-      return c.json({ 
-        error: 'Failed to create appointment',
-        details: error.message 
-      }, 500)
+    if (appointmentError || !appointment) {
+      console.error('Appointment creation error:', appointmentError)
+      throw appointmentError
     }
-  })
+
+    await createNotification(
+      data.doctorId,
+      'APPOINTMENT',
+      'New Appointment Request',
+      `You have a new appointment request from ${user.name}`
+    )
+
+    return c.json({ appointment }, 201)
+  } catch (error: any) {
+    console.error('Appointment creation failed:', error)
+    return c.json({ 
+      error: 'Failed to create appointment',
+      details: error.message 
+    }, 500)
+  }
+})
 
 // Get user appointments
 appointmentRoutes.get('/', async (c) => {
   try {
-    const user = c.get('user')
+    const user = c.get('user') as User
     const { data: appointments, error } = await supabase
       .from('appointments')
       .select(`
         *,
-        doctor:users!doctorId(*),
-        patient:users!patientId(*),
+        doctor:users!doctorId(id, name, email, role),
+        patient:users!patientId(id, name, email, role),
         prescription(*)
       `)
       .eq(user.role === 'DOCTOR' ? 'doctorId' : 'patientId', user.id)
       .order('date', { ascending: true })
 
     if (error) throw error
-    return c.json({ appointments })
-  } catch (error) {
+    return c.json({ appointments: appointments || [] })
+  } catch (error: any) {
+    console.error('Fetch appointments error:', error)
     return c.json({ error: 'Failed to fetch appointments' }, 500)
   }
 })
@@ -105,15 +121,15 @@ appointmentRoutes.get('/', async (c) => {
 // Get appointment by ID
 appointmentRoutes.get('/:id', async (c) => {
   try {
-    const user = c.get('user')
+    const user = c.get('user') as User
     const id = c.req.param('id')
 
     const { data: appointment, error } = await supabase
       .from('appointments')
       .select(`
         *,
-        doctor:users!doctorId(*),
-        patient:users!patientId(*),
+        doctor:users!doctorId(id, name, email, role),
+        patient:users!patientId(id, name, email, role),
         prescription(*)
       `)
       .eq('id', id)
@@ -123,7 +139,6 @@ appointmentRoutes.get('/:id', async (c) => {
       return c.json({ error: 'Appointment not found' }, 404)
     }
 
-    // Check access rights
     if (user.role === 'PATIENT' && appointment.patientId !== user.id) {
       return c.json({ error: 'Unauthorized' }, 403)
     }
@@ -132,7 +147,8 @@ appointmentRoutes.get('/:id', async (c) => {
     }
 
     return c.json({ appointment })
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Fetch appointment error:', error)
     return c.json({ error: 'Failed to fetch appointment' }, 500)
   }
 })
@@ -140,7 +156,7 @@ appointmentRoutes.get('/:id', async (c) => {
 // Update appointment status
 appointmentRoutes.patch('/:id', zValidator('json', updateAppointmentSchema), async (c) => {
   try {
-    const user = c.get('user')
+    const user = c.get('user') as User
     const id = c.req.param('id')
     const { status } = await c.req.json()
 
@@ -155,14 +171,13 @@ appointmentRoutes.patch('/:id', zValidator('json', updateAppointmentSchema), asy
       .eq('doctorId', user.id)
       .select(`
         *,
-        patient:users!patientId(*),
-        doctor:users!doctorId(name)
+        patient:users!patientId(id, name, email, role),
+        doctor:users!doctorId(id, name, email, role)
       `)
       .single()
 
-    if (error) throw error
+    if (error || !appointment) throw error
 
-    // Send appropriate notifications
     if (status === 'APPROVED') {
       await createNotification(
         appointment.patientId,
@@ -180,7 +195,8 @@ appointmentRoutes.patch('/:id', zValidator('json', updateAppointmentSchema), asy
     }
 
     return c.json({ appointment })
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Update appointment error:', error)
     return c.json({ error: 'Failed to update appointment' }, 500)
   }
 })
@@ -188,7 +204,7 @@ appointmentRoutes.patch('/:id', zValidator('json', updateAppointmentSchema), asy
 // Get doctor schedule
 appointmentRoutes.get('/doctor/schedule', async (c) => {
   try {
-    const user = c.get('user')
+    const user = c.get('user') as User
     if (user.role !== 'DOCTOR') {
       return c.json({ error: 'Unauthorized' }, 403)
     }
@@ -197,14 +213,15 @@ appointmentRoutes.get('/doctor/schedule', async (c) => {
       .from('appointments')
       .select(`
         *,
-        patient:users!patientId(*)
+        patient:users!patientId(id, name, email, role)
       `)
       .eq('doctorId', user.id)
       .order('date', { ascending: true })
 
     if (error) throw error
-    return c.json({ schedule })
-  } catch (error) {
+    return c.json({ schedule: schedule || [] })
+  } catch (error: any) {
+    console.error('Fetch schedule error:', error)
     return c.json({ error: 'Failed to fetch schedule' }, 500)
   }
 })

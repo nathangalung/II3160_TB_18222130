@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { authMiddleware } from '../middlewares/auth'
-import { prisma } from '../libs/prisma'
+import { prisma } from '../../index'
 
 const notificationRoutes = new Hono()
 notificationRoutes.use('/*', authMiddleware)

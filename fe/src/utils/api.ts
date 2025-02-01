@@ -1,60 +1,70 @@
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'http://localhost:3001/api'
 
-// Types
-interface ApiResponse<T = any> {
-  data?: T;
-  error?: string;
-}
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
+interface ApiNotification {
+  id: string
+  type: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
 }
 
 interface AppointmentCreate {
-  date: string;
-  complaint: string;
-  medicalHistory: string;
-  doctorId: string;
+  date: string
+  complaint: string
+  medicalHistory: string
+  doctorId: string
+}
+
+interface ApiResponse<T = any> {
+  data?: T
+  error?: string
+  message?: string
 }
 
 // Helper function for API requests
 async function makeRequest<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    return { error: 'Authentication required' }
-  }
-
   try {
+    const token = localStorage.getItem('token')
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
         ...options?.headers,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      },
     })
 
     const data = await response.json()
+
     if (!response.ok) {
-      throw new Error(data.error || 'API request failed')
+      throw new Error(data.error || 'Something went wrong')
     }
 
-    return { data }
-  } catch (error: any) {
+    return data
+  } catch (error) {
     console.error('API Error:', error)
-    return { error: error.message }
+    throw error
   }
 }
 
 // API endpoints
 export const api = {
+  auth: {
+    login: (credentials: { email: string; password: string }) =>
+      makeRequest<{ token: string; user: any }>('/users/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      }),
+    register: (userData: { name: string; email: string; password: string; role: string }) =>
+      makeRequest<{ message: string }>('/users/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      }),
+  },
+
   notifications: {
-    getAll: () => makeRequest<Notification[]>('/notifications'),
+    getAll: () => makeRequest<ApiNotification[]>('/notifications'),
     markAsRead: (id: string) => makeRequest(`/notifications/${id}/read`, { method: 'PATCH' }),
     markAllAsRead: () => makeRequest('/notifications/read-all', { method: 'PATCH' })
   },

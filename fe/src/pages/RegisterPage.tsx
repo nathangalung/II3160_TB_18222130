@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom' // Add useNavigate
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { api } from '../utils/api'
 import AuthImage from '../assets/Auth.png'
 
 type UserType = 'patient' | 'doctor' | 'pharmacist' | null
@@ -22,29 +23,20 @@ export default function RegisterPage() {
     setError('')
   
     try {
-      const response = await fetch('http://localhost:3000/api/users/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role: userType.toUpperCase()
-        }),
+      const { data, error } = await api.auth.register({
+        name,
+        email,
+        password,
+        role: userType.toUpperCase()
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || data.details || 'Failed to register')
+      if (error) {
+        throw new Error(error)
       }
 
       // Show success message and redirect to login
-      alert(data.message)
+      alert(data?.message || 'Registration successful! Please login to continue.')
       navigate('/login')
-
     } catch (err: any) {
       console.error('Registration error:', err)
       setError(err.message || 'Failed to register')

@@ -12,6 +12,10 @@ export const authMiddleware = async (c: Context, next: Next) => {
     const token = authHeader.split(' ')[1]
     const userId = verifyToken(token)
     
+    if (!userId) {
+      return c.json({ error: 'Invalid token' }, 401)
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId }
     })

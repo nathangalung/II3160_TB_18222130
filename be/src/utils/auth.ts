@@ -1,15 +1,20 @@
-import { sign, verify } from 'jsonwebtoken'
+import { sign, verify, JwtPayload } from 'jsonwebtoken'
 import { hash, compare } from 'bcryptjs'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+
+interface JwtCustomPayload {
+  userId: string;
+}
 
 export const generateToken = (userId: string) => {
   return sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
 }
 
-export const verifyToken = (token: string) => {
+export const verifyToken = (token: string): string | null => {
   try {
-    return verify(token, JWT_SECRET)
+    const decoded = verify(token, JWT_SECRET) as JwtCustomPayload
+    return decoded.userId
   } catch {
     return null
   }

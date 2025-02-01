@@ -8,10 +8,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
-    "declaration": true,
-    "typeRoots": ["./src/types", "./node_modules/@types"],
-    "noImplicitAny": false
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["src/**/*", "index.ts"],
+  "include": ["**/*.ts"],
   "exclude": ["node_modules"]
 }

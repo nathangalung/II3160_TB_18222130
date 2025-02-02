@@ -12,26 +12,17 @@ export const prisma = new PrismaClient()
 
 const PORT = parseInt(process.env.PORT || '3000')
 
-// CORS configuration
+// Add CORS middleware
 app.use('/*', cors({
-  origin: ['https://medico-tst-fe.vercel.app'],
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  origin: ['https://medico-tst-fe.vercel.app', 'http://localhost:5173'],
   credentials: true,
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowHeaders: ['Origin', 'Content-Type', 'Accept', 'Authorization'],
   exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
   maxAge: 600,
 }))
 
-// Handle OPTIONS preflight requests
-app.options('*', (c) => {
-  c.header('Access-Control-Allow-Origin', 'https://medico-tst-fe.vercel.app')
-  c.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH')
-  c.header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-  c.header('Access-Control-Allow-Credentials', 'true')
-  return c.text('OK', 200)
-})
-
-// API routes
+// Your existing routes
 app.route('/api/users', userRoutes)
 app.route('/api/appointments', appointmentRoutes)
 app.route('/api/prescriptions', prescriptionRoutes)

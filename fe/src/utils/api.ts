@@ -1,15 +1,4 @@
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://medico-tst-be.vercel.app/api'
-  : 'http://localhost:3000/api'
-
-interface ApiNotification {
-  id: string
-  type: string
-  title: string
-  message: string
-  isRead: boolean
-  createdAt: string
-}
+const API_URL = import.meta.env.VITE_API_URL || 'https://medico-tst-be.vercel.app';
 
 interface AppointmentCreate {
   date: string
@@ -18,93 +7,87 @@ interface AppointmentCreate {
   doctorId: string
 }
 
-interface ApiResponse<T = any> {
-  data?: T
-  error?: string
-  message?: string
-}
-
-async function makeRequest<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
-  try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-        ...options?.headers,
-      },
-      mode: 'cors',
-      credentials: 'same-origin'
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Something went wrong')
-    }
-
-    return data
-  } catch (error) {
-    console.error('API Error:', error)
-    throw error
-  }
-}
-
-// API endpoints
 export const api = {
+  async at(endpoint: string, options: RequestInit = {}) {
+    const url = `${API_URL}${endpoint}`;
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    };
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'same-origin',
+        mode: 'cors'
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
+  },
+
+  get: (endpoint: string, options = {}) => 
+    api.at(endpoint, { ...options, method: 'GET' }),
+
+  post: (endpoint: string, data: any, options = {}) => 
+    api.at(endpoint, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  patch: (endpoint: string, data: any, options = {}) => 
+    api.at(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
   auth: {
     login: (credentials: { email: string; password: string }) =>
-      makeRequest<{ token: string; user: any }>('/users/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      }),
-    register: (userData: { name: string; email: string; password: string; role: string }) =>
-      makeRequest<{ message: string }>('/users/register', {
-        method: 'POST',
-        body: JSON.stringify(userData),
-      }),
+      api.post('/api/users/login', credentials),
+    register: (data: { email: string; password: string; name: string; role: string }) =>
+      api.post('/api/users/register', data),
   },
 
   notifications: {
-    getAll: () => makeRequest<ApiNotification[]>('/notifications'),
-    markAsRead: (id: string) => makeRequest(`/notifications/${id}/read`, { method: 'PATCH' }),
-    markAllAsRead: () => makeRequest('/notifications/read-all', { method: 'PATCH' })
+    getAll: () => api.get('/api/notifications'),
+    markAsRead: (id: string) => api.patch(`/api/notifications/${id}/read`, {}),
+    markAllAsRead: () => api.patch('/api/notifications/read-all', {})
   },
 
   appointments: {
-    create: (data: AppointmentCreate) => 
-      makeRequest('/appointments', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
-    getAll: () => makeRequest('/appointments'),
-    getById: (id: string) => makeRequest(`/appointments/${id}`),
-    updateStatus: (id: string, status: string) => 
-      makeRequest(`/appointments/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status })
-      })
+    create: (data: AppointmentCreate) => api.post('/api/appointments', data),
+    getAll: () => api.get('/api/appointments'),
+    getById: (id: string) => api.get(`/api/appointments/${id}`),
+    updateStatus: (id: string, status: AppointmentStatus) => 
+      api.patch(`/api/appointments/${id}`, { status })
   },
 
   chat: {
-    getConversations: () => makeRequest('/chat/conversations'),
-    getMessages: (conversationId: string) => makeRequest(`/chat/${conversationId}/messages`),
+    getConversations: () => api.get('/api/chat/conversations'),
+    getMessages: (conversationId: string) => api.get(`/api/chat/${conversationId}/messages`),
     sendMessage: (data: { content: string; receiverId: string }) => 
-      makeRequest('/chat/send', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      })
+      api.post('/api/chat/send', data)
   },
 
   profile: {
-    get: () => makeRequest('/users/profile'),
+    get: () => api.get('/api/users/profile'),
     update: (data: Partial<{ name: string; email: string; password: string }>) =>
-      makeRequest('/users/profile', {
-        method: 'PATCH',
-        body: JSON.stringify(data)
-      })
+      api.patch('/api/users/profile', data)
   }
-}
+};
 
 export type AppointmentStatus = 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELLED'

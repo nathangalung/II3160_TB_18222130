@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
-    "build": "tsc",
-    "vercel-build": "prisma generate && tsc",
+    "build": "bun build index.ts --target=node --outdir=dist",
+    "vercel-build": "prisma generate && bun run build",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio"

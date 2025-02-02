@@ -1,4 +1,3 @@
-import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { PrismaClient } from '@prisma/client'
@@ -25,7 +24,7 @@ app.use('/*', cors({
 
 // Handle OPTIONS preflight requests
 app.options('*', (c) => {
-  return c.text('OK', 200)
+  return c.text('', 204)
 })
 
 // API routes
@@ -35,4 +34,7 @@ app.route('/api/prescriptions', prescriptionRoutes)
 app.route('/api/chat', chatRoutes)
 app.route('/api/notifications', notificationRoutes)
 
-export default app
+export default {
+  port: PORT,
+  fetch: app.fetch
+}

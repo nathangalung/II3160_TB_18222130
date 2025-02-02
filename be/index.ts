@@ -13,17 +13,20 @@ export const prisma = new PrismaClient()
 
 const PORT = parseInt(process.env.PORT || '3000')
 
-app.use('*', cors({
-  origin: [
-    'http://localhost:5173',
-    'https://medico-tst-fe.vercel.app'
-  ],
-  credentials: true,
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'PATCH', 'OPTIONS'],
+// CORS configuration
+app.use('/*', cors({
+  origin: ['https://medico-tst-fe.vercel.app', 'http://localhost:5173'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
   exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
   maxAge: 600,
 }))
+
+// Handle OPTIONS preflight requests
+app.options('*', (c) => {
+  return c.text('', 204)
+})
 
 // API routes
 app.route('/api/users', userRoutes)
@@ -31,29 +34,5 @@ app.route('/api/appointments', appointmentRoutes)
 app.route('/api/prescriptions', prescriptionRoutes)
 app.route('/api/chat', chatRoutes)
 app.route('/api/notifications', notificationRoutes)
-
-app.options('/api/*', (c) => {
-  c.header('Access-Control-Allow-Origin', 'https://medico-tst-fe.vercel.app')
-  c.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
-  c.header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-  return c.text('OK', 200)
-})
-
-// Development server
-if (process.env.NODE_ENV !== 'production') {
-  const startServer = async () => {
-    try {
-      const server = serve({
-        fetch: app.fetch,
-        port: PORT
-      })
-      console.log(`Server is running on http://localhost:${PORT}`)
-    } catch (error) {
-      console.error('Failed to start server:', error)
-      process.exit(1)
-    }
-  }
-  startServer()
-}
 
 export default app

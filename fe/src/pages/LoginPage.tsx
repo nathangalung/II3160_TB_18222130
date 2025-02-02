@@ -1,72 +1,72 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
-import { api } from '../utils/api'
-import AuthImage from '../assets/Auth.png'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { api } from "../utils/api";
+import AuthImage from "../assets/Auth.png";
 
 interface LoginResponse {
-  data?: {
-    token: string
-    user: {
-      id: string
-      name: string
-      email: string
-      role: 'PATIENT' | 'DOCTOR' | 'PHARMACIST'
-      imageUrl?: string
-    }
-  }
-  error?: string
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: "PATIENT" | "DOCTOR" | "PHARMACIST";
+    imageUrl?: string;
+  };
+  error?: string;
 }
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-  
-    try {
-      const response = await api.auth.login({
-        email: email.trim(),
-        password
-      }) as LoginResponse
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-      if (response.error || !response.data) {
-        throw new Error(response.error || 'Login failed')
+    try {
+      const response = (await api.auth.login({
+        email: email.trim(),
+        password,
+      })) as LoginResponse;
+
+      console.log("Login response:", response);
+
+      if (response.error || !response) {
+        throw new Error(response.error || "Login failed");
       }
 
-      const { token, user } = response.data
+      const { token, user } = response;
 
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
 
       // Navigate based on user role
       switch (user.role) {
-        case 'PATIENT':
-          navigate('/patient/home')
-          break
-        case 'DOCTOR':
-          navigate('/doctor/home')
-          break
-        case 'PHARMACIST':
-          navigate('/pharmacist/home')
-          break
+        case "PATIENT":
+          navigate("/patient/home");
+          break;
+        case "DOCTOR":
+          navigate("/doctor/home");
+          break;
+        case "PHARMACIST":
+          navigate("/pharmacist/home");
+          break;
         default:
-          navigate('/patient/home')
+          navigate("/patient/home");
       }
     } catch (err: any) {
-      console.error('Login error:', err)
-      setError(err.message || 'Failed to login')
+      console.error("Login error:", err);
+      setError(err.message || "Failed to login");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="h-screen overflow-hidden flex">
@@ -92,7 +92,7 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Email</label>
               <input
@@ -105,10 +105,12 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Password</label>
+              <label className="text-sm font-medium text-gray-700">
+                Password
+              </label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -133,12 +135,12 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-lg bg-[#0EA5E9] px-4 py-2 text-white hover:bg-[#0EA5E9]/90 disabled:opacity-50"
             >
-              {loading ? 'Loading...' : 'Login'}
+              {loading ? "Loading..." : "Login"}
             </button>
           </form>
 
           <p className="text-center text-gray-500">
-            Don't Have An Account?{' '}
+            Don't Have An Account?{" "}
             <Link
               to="/register"
               className="text-[#0EA5E9] hover:underline font-medium"
@@ -157,5 +159,5 @@ export default function LoginPage() {
         />
       </div>
     </div>
-  )
+  );
 }

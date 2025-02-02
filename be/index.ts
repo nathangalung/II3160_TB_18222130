@@ -14,7 +14,7 @@ const PORT = parseInt(process.env.PORT || '3000')
 
 // CORS configuration
 app.use('/*', cors({
-  origin: ['https://medico-tst-fe.vercel.app', 'http://localhost:5173'],
+  origin: ['https://medico-tst-fe.vercel.app'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -24,7 +24,11 @@ app.use('/*', cors({
 
 // Handle OPTIONS preflight requests
 app.options('*', (c) => {
-  return c.text('', 204)
+  c.header('Access-Control-Allow-Origin', 'https://medico-tst-fe.vercel.app')
+  c.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH')
+  c.header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+  c.header('Access-Control-Allow-Credentials', 'true')
+  return c.text('OK', 200)
 })
 
 // API routes

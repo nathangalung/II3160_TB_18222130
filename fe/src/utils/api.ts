@@ -35,7 +35,7 @@ async function makeRequest<T>(endpoint: string, options?: RequestInit): Promise<
         ...options?.headers,
       },
       mode: 'cors',
-      credentials: 'include'
+      credentials: 'same-origin'
     })
 
     const data = await response.json()

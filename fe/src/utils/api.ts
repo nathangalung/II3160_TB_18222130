@@ -34,8 +34,8 @@ async function makeRequest<T>(endpoint: string, options?: RequestInit): Promise<
         'Authorization': token ? `Bearer ${token}` : '',
         ...options?.headers,
       },
-      credentials: 'include',
-      mode: 'cors'
+      mode: 'cors',
+      credentials: 'include'
     })
 
     const data = await response.json()

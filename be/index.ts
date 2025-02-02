@@ -25,7 +25,7 @@ app.use('/*', cors({
 
 // Handle OPTIONS preflight requests
 app.options('*', (c) => {
-  return c.text('', 204)
+  return c.text('OK', 200)
 })
 
 // API routes
